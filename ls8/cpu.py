@@ -73,6 +73,7 @@ class CPU:
         HLT = 0b00000001
         PRN = 0b01000111
         LDI = 0b10000010  # binary code for 130
+        self.load()
         self.trace()
         while self.running:
             current_instruction = self.ram_read(self.pc)
