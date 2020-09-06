@@ -14,24 +14,50 @@ class CPU:
 
     def load(self):
         """Load a program into memory."""
+        self.read_argv()
+        # address = 0
 
-        address = 0
+        # # For now, we've just hardcoded a program:
 
-        # For now, we've just hardcoded a program:
+        # program = [
+        #     # From print8.ls8
+        #     0b10000010,  # LDI R0,8
+        #     0b00000000,
+        #     0b00001000,
+        #     0b01000111,  # PRN R0
+        #     0b00000000,
+        #     0b00000001,  # HLT
+        # ]
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+        # for instruction in program:
+        #     self.ram[address] = instruction
+        #     address += 1
 
-        for instruction in program:
-            self.ram[address] = instruction
-            address += 1
+    def read_argv(self):
+        params = sys.argv
+
+        if len(params) != 2:
+            print(f"Usage: file.py filename")
+            sys.exit(1)
+
+        if len(params) == 2:
+            try:
+                with open(params[1]) as f:
+                    address = 0
+                    for line in f:
+                        split_comment = line.split("#")
+                        num = split_comment[0].strip()
+                        if num == '':
+                            continue
+                        num2 = int("0b"+num,2)
+                        self.ram_write(address,num2)
+                        address += 1
+            except:
+                print("file not found")
+                sys.exit(2)
+                            
+
+
 
     def alu(self, op, reg_a, reg_b):
         """ALU operations."""
@@ -73,6 +99,7 @@ class CPU:
         HLT = 0b00000001
         PRN = 0b01000111
         LDI = 0b10000010  # binary code for 130
+        MUL = 0b10100010
         self.load()
         self.trace()
         while self.running:
@@ -87,6 +114,13 @@ class CPU:
             elif current_instruction == PRN:
                 print(self.reg[op_a])
                 self.pc += 2
+            elif current_instruction == MUL:
+                self.reg[op_a] = self.reg[op_a] * self.reg[op_b]
+                self.pc+=3
 
             elif current_instruction == HLT:
                 self.running = False
+cpu = CPU()
+
+
+cpu.run()
