@@ -12,6 +12,7 @@ class CPU:
         self.sp = 7  # Last index in the registry is 7
         self.reg[self.sp] = 0xF4  # reserved space for the start of stack
         self.running = False
+        self.flag_reg = [0] * 8
         self.pc = 0
         self.branch_table = {
 
@@ -23,10 +24,22 @@ class CPU:
             0b01000110: self.pop_from_stack,
             0b01010000: self.call,
             0b00010001: self.return_op,
-            0b10100000: self.ADD
+            0b10100000: self.ADD,
+            0b10100001:self.SUB,
+            0b10100111: self.CMP,
+            0b01010100: self.JMP,
+            0b01010110: self.JNE,
+            0b01010101: self.JEQ,
+            0b10101000: self.AND,
+            0b10101010: self.OR,
+            0b10101011: self.XOR,
+            0b01101001: self.NOT
+
+
         }
 
     def load(self):
+        print(self.flag_reg)
         """Load a program into memory."""
         params = sys.argv
 
@@ -67,22 +80,63 @@ class CPU:
     def op_MUL(self, a, b):
         self.alu("MUL", a, b)
 
+    def AND(self, a, b):
+        a = self.reg[a]
+        b = self.reg[b]
+        self.alu("AND", a, b)
+
+    def OR(self, a, b):
+        a = self.reg[a]
+        b = self.reg[b]
+        self.alu("OR", a, b)
+
+    def XOR(self, a, b):
+        a = self.reg[a]
+        b = self.reg[b]
+        self.alu("XOR", a, b)
+
+    def NOT(self, a, b):
+        a = self.reg[a]
+        self.alu("NOT", a, b)
+
     def return_op(self, a, b):
         self.pc = self.ram_read(self.reg[self.sp])
         self.reg[self.sp] += 1
+
+    def CMP(self, a, b):
+        a = self.reg[a]
+        b = self.reg[b]
+        self.alu("CMP", a, b)
+
+    def JMP(self, a, b):
+        self.pc = self.reg[a]
+
+    def JEQ(self, a, b):
+        if self.flag_reg[-1] == 1:
+            self.JMP(a, b)
+        else:
+            self.pc += 2
+
+    def JNE(self, a, b):
+        if self.flag_reg[-1] == 0:
+            self.JMP(a, b)
+        else:
+            self.pc += 2
 
     def call(self, a, b):
         return_address = self.pc + 2
         self.reg[self.sp] -= 1
         self.ram_write(self.reg[self.sp], return_address)
-        reg_num = self.ram[self.pc+1]
-        self.pc = self.reg[reg_num]
+        self.pc = self.reg[a]
 
     def op_HLT(self, a, b):
         self.running = False
 
     def ADD(self, a, b):
         self.alu("ADD", a, b)
+
+    def SUB(self, a, b):
+        self.alu("SUB", a, b)
 
     def op_PRN(self, a, b):
         print(self.reg[a])
@@ -99,10 +153,33 @@ class CPU:
         if op == "ADD":
             self.reg[a] += self.reg[b]
             self.pc += 3
-        # elif op == "SUB": etc
+        elif op == "SUB":
+            self.reg[a] -= self.reg[b]
+            self.pc += 3 
         elif op == "MUL":
             self.reg[a] = self.reg[a] * self.reg[b]
             self.pc += 3
+        elif op == "CMP":
+            if a == b:
+                self.flag_reg[-1] = 1
+            elif a > b:
+                self.flag_reg[-2] = 1
+            elif a < b:
+                self.flag_reg[-3] = 1
+            self.pc += 3
+            print(self.flag_reg)
+        elif op == "AND":
+            self.reg[self.ram[self.pc+1]] = a & b
+            self.pc += 3
+        elif op == "OR":
+            self.reg[self.ram[self.pc+1]] = a | b
+            self.pc += 3
+        elif op == "XOR":
+            self.reg[self.ram[self.pc+1]] = a ^ b
+            self.pc += 3
+        elif op == "NOT":
+            self.reg[self.ram[self.pc+1]] = ~a
+            self.pc += 2
         else:
             raise Exception("Unsupported ALU operation")
 
