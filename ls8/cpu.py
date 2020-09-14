@@ -39,7 +39,7 @@ class CPU:
         }
 
     def load(self):
-        print(self.flag_reg)
+       
         """Load a program into memory."""
         params = sys.argv
 
@@ -167,7 +167,7 @@ class CPU:
             elif a < b:
                 self.flag_reg[-3] = 1
             self.pc += 3
-            print(self.flag_reg)
+            
         elif op == "AND":
             self.reg[self.ram[self.pc+1]] = a & b
             self.pc += 3
